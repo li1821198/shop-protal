@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="/js/bootstrap3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/js/bootstrap3/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet"/>
+    <link rel="icon" href="/js/shop/assets/img/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="shop/css/webbase.css" />
+    <link rel="stylesheet" type="text/css" href="shop/css/pages-JD-index.css" />
+    <link rel="stylesheet" type="text/css" href="shop/css/widget-jquery.autocomplete.css" />
+    <link rel="stylesheet" type="text/css" href="shop/css/widget-cartPanelView.css" />
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div class="collapse navbar-collapse" id="bs-example-navbar-collspan-1">
+    <ul class="nav navbar-nav navbar-right">
+        <li id="loginDiv"><a href="/login.html">登录</a></li>
+        <li id="logoutDiv"><a href="/reg.html">注册</a></li>
+        <button onclick="location.href='cart.html'"   type="button" class="btn btn-primary btn-sm" style="background:#c81623;color:#fff">
+            <span class="glyphicon glyphicon-shopping-cart"></span>
+            我的购物车
+            <span id="cartTotalCount">0</span>
+        </button>
+    </ul>
+
+
+</div>
+
+<div class="container">
+    <div id="nav-bottom">
+        <!--顶部-->
+        <div class="nav-top">
+            <!--头部-->
+            <div class="header">
+                <div class="py-container">
+                    <div class="yui3-g NavList">
+                        <div class="yui3-u Left all-sort">
+                            <h4>全部商品分类</h4>
+                        </div>
+                        <div class="yui3-u Center navArea">
+                            <ul class="nav">
+                                <li class="f-item">服装城</li>
+                                <li class="f-item">美妆馆</li>
+                                <li class="f-item">品优超市</li>
+                                <li class="f-item">全球购</li>
+                                <li class="f-item">闪购</li>
+                                <li class="f-item">团购</li>
+                                <li class="f-item">有趣</li>
+                            </ul>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="sort">
+        <div class="py-container">
+            <div class="yui3-g SortList ">
+                <div class="yui3-u Left all-sort-list">
+                    <div class="all-sort-list2">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-success">
+                <div class="panel-heading">商品列表</div>
+                <div class="panel-body" id="productListDiv">
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-success">
+                <div class="panel-heading">热销品牌</div>
+                <div class="panel-body" id="brandListDiv">
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<textarea id="productDiv" style="display: none;">
+    <div class="col-md-3">
+        <div class="thumbnail" style="height: 380px ; width: 270px;">
+            <img src="##mainImage##" style="height: 200px ; width: 200px;">
+            <div class="caption">
+                <h3>##productName##</h3>
+                <p><b><font color="red">##price##</font></b></p>
+                <p><a class="btn btn-primary" role="button" onclick="addCart('##productId##')">加入购物车</a> <a href="#"
+                                                                                           class="btn btn-default"
+                                                                                           role="button">Button</a></p>
+            </div>
+        </div>
+    </div>
+</textarea>
+
+
+<div id="brandDiv" style="display: none;">
+    <div class="col-md-4">
+        <div class="thumbnail">
+            <img src="##image##">
+            <div class="caption">
+                <h3>品牌名:##brandName##</h3>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="productTemplateDiv" style="display: none">
+    <div class="col-md-2 product-info">
+        <div class="product-container">
+            <img src="#productImage#" class="product-image"/>
+            <p class="product-name">#productName#</p>
+            <div class="product-price">
+                <i>￥</i>
+                <span>#productPrice#</span>
+            </div>
+            <div class="product-operation">
+                <button type="button" onclick="addCartItem('##productId##')" class="btn btn-primary btn-xs">
+                    <span class="glyphicon glyphicon-shopping-cart"></span>
+                    加入购物车
+                </button>
+                <button class="btn btn-primary btn-xs">立即购买</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/js/jquery-3.3.1.js"></script>
+<script src="/js/bootstrap3/js/bootstrap.min.js"></script>
+<script src="/js/bootstrap3/bootstrap-datetimepicker/js/moment-with-locales.js"></script>
+<script src="/js/bootstrap3/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+<script src="/js/bootstrap3/js/bootbox.min.js"></script>
+<script src="js/jquery.cookie.min.js"></script>
+
+<script>
+
+    $(function () {
+
+
+        initCategory();
+        initMemberInfo();
+        initHotProducts();
+        finTotalNum();
+    })
+    function finTotalNum() {
+
+        var token = $.cookie("token");
+
+        if (token) {
+            //发起一个ajax请求调用获取当前登录会员信息的API接口
+            $.ajax({
+                url: "http://localhost:8082/api/cart/findCartNum",
+                dataType: "json",
+                type: "get",
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("x-token", token)
+                },
+                success: function (result) {
+
+                    if (result.code == 200) {
+
+                        $("#cartTotalCount").html(result.data.totalNum);
+                    } else {
+                        alert(result.message);
+                    }
+                },
+
+            });
+        }
+    }
+
+    function addCart(productId) {
+
+        var token = $.cookie("token");
+
+        if (token) {
+            //发起一个ajax请求调用获取当前登录会员信息的API接口
+            $.ajax({
+                url: "http://localhost:8082/api/cart/addCart",
+                dataType: "json",
+                type: "post",
+                data:{"goodsId":productId,
+                       "num":1},
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("x-token", token)
+                },
+                success: function (result) {
+                    console.log(result)
+
+                    if (result.code == 200) {
+
+                        $("#cartTotalCount").html(result.data.totalNum);
+                    } else {
+                        alert(result.message);
+                    }
+                },
+
+            });
+        }
+    }
+    function initMemberInfo() {
+        var token=$.cookie("token");
+        if(token){
+            //发起一个ajax请求调用获取当前登录会员信息的API接口
+            $.ajax({
+                url:"http://localhost:8082/api/members/loginMember",
+                dataType:"json",
+                type:"post",
+                beforeSend:function (xhr) {
+                    xhr.setRequestHeader("x-token",token)
+                },
+                success:function(result){
+
+                    if(result.code == 200){
+                  var realName= result.data.realName;
+                        $("#loginDiv").html("<a href=''>欢迎"+realName+"登录</a>");
+                        $("#logoutDiv").html("<a href='' onclick='logout()'>退出</a>");
+                    }else{
+                        alert(result.message);
+                    }
+                },
+
+            });
+        }
+
+
+    }
+    function logout() {
+        var token=$.cookie("token");
+        if(token){
+            //发起一个ajax请求调用获取当前登录会员信息的API接口
+            $.ajax({
+                url:"http://localhost:8082/api/members/logoutMember",
+                dataType:"json",
+                type:"get",
+                beforeSend:function (xhr) {
+                    xhr.setRequestHeader("x-token",token)
+                },
+                success:function(result){
+
+                    if(result.code == 200){
+                        $.removeCookie("token");
+                       location.href="product.html";
+                    }else{
+                        alert(result.message);
+                    }
+                },
+
+            });
+        }
+
+
+    }
+    function initHotProducts() {
+        var token=$.cookie("token");
+        if(token){
+            $.ajax({
+                    type: "get",
+                    url: "http://localhost:8082/api/products/",
+                   beforeSend:function (xhr) {
+                       xhr.setRequestHeader("x-token",token)
+                   },
+                    success: function (result) {
+                        var v_productArr = result.data
+                        var v_productHtml = $("#productDiv").val();
+                        for (let product of v_productArr){
+                            var res=   v_productHtml.replace("##productName##",product.productName)
+                                .replace("##price##",product.price).replace("##mainImage##",product.image)
+                                .replace("##productId##",product.id);
+
+                            $("#productListDiv").append(res)
+                        }
+
+                    }
+
+
+                }
+            )
+        }
+
+
+    }
+    function initCategory() {
+        var token = $.cookie("token");
+        //发起一个AJAX请求调用查询所有商品分类的接口
+        if (token) {
+            $.ajax({
+                url: "http://localhost:8082/api/category/queryCategoryList/",
+                type: "get",
+                dataType: "json",
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("x-token", token)
+                },
+                success: function (result) {
+                    if (result.code == 200) {
+                        initCategory1(result.data, 1);
+                        initCss();
+                    }
+                }
+            });
+        }
+    }
+
+    function initCategory1(categoryList,pid){
+
+
+        var categoryHTML = "";
+        for(var i = 0 ; i < categoryList.length ; i ++){
+            if(categoryList[i].pid == pid){
+                categoryHTML += '<div class="item">';
+                categoryHTML += '<h3><a href="">' + categoryList[i].name + '</a></h3>';
+                categoryHTML += initCategory2(categoryList,categoryList[i].id);
+                categoryHTML += '</div>';
+            }
+
+        }
+        $(".all-sort-list2").html(categoryHTML);
+    }
+
+    function initCategory2(categoryList,pid){
+
+        var categoryHTML = "";
+        categoryHTML += '<div class="item-list clearfix">';
+        categoryHTML += '<div class="subitem">';
+        for(var i = 0 ; i < categoryList.length ; i ++){
+            if(categoryList[i].pid == pid){
+                categoryHTML += '<dl class="fore1">';
+                categoryHTML += '<dt><a href="">' + categoryList[i].name + '</a></dt>';
+                categoryHTML += initCategory3(categoryList,categoryList[i].id);
+                categoryHTML += '</dl>';
+            }
+        }
+        categoryHTML += '</div></div>';
+        return categoryHTML;
+    }
+
+    function initCategory3(categoryList,pid){
+
+            var categoryHTML = "<dd>";
+            for(var i = 0 ; i < categoryList.length ; i ++){
+                if(categoryList[i].pid == pid){
+                    categoryHTML += '<em><a href="">' + categoryList[i].name + '</a></em>';
+                }
+        }
+        categoryHTML += '</dd>';
+        return categoryHTML;
+    }
+
+    function initCss() {
+        $('.all-sort-list2 > .item').hover(function() {
+            //父类分类列表容器的高度
+            $(this).addClass('hover');
+            $(this).children('.item-list').css('display', 'block');
+        }, function() {
+            $(this).removeClass('hover');
+            $(this).children('.item-list').css('display', 'none');
+        });
+
+        $('.item > .item-list > .close').click(function() {
+            $(this).parent().parent().removeClass('hover');
+            $(this).parent().hide();
+        });
+    }
+
+
+
+
+</script>
+</body>
+</html>
